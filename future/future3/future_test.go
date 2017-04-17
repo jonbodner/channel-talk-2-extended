@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"testing"
 	"time"
 )
@@ -24,36 +23,37 @@ func TestGetUntil(t *testing.T) {
 	// and timeout will be true
 	start := time.Now()
 	val, timeout, err := f.GetUntil(time.Second)
-	end := time.Now()
-	if end.Sub(start) < time.Second {
-		t.Errorf("That should have waited a second to finish, took %v", end.Sub(start))
+	elapsed := time.Now().Sub(start)
+	if elapsed < time.Second {
+		t.Errorf("That should have waited a second to finish, took %v", elapsed)
 	}
 	if val != nil || err != nil || timeout != true {
-		t.Errorf("Expected nil, true, and nil, got %v, %v, and %v", val, timeout, err)
+		t.Errorf("Expected nil, true, and nil, got %v, %v, and %v",
+			val, timeout, err)
 	}
-	fmt.Println(val, err)
 
 	// this will wait for val and err to have values
 	start = time.Now()
 	val, err = f.Get()
-	end = time.Now()
-	if end.Sub(start) > 1100*time.Millisecond {
-		t.Errorf("That should have taken about a second to finish, took %v", end.Sub(start))
+	elapsed = time.Now().Sub(start)
+	if elapsed > 1100 * time.Millisecond {
+		t.Errorf("That should have taken about a second to finish, took %v",
+			elapsed)
 	}
 	if val != 20 || err != nil {
 		t.Errorf("Expected 20 and nil, got %v and %v", val, err)
 	}
-	fmt.Println(val, err)
 
 	//this GetUntil will return immediately
 	start = time.Now()
 	val, timeout, err = f.GetUntil(time.Second)
-	end = time.Now()
-	if end.Sub(start) > 100*time.Millisecond {
-		t.Errorf("That should have taken no time at all to finish, took %v", end.Sub(start))
+	elapsed = time.Now().Sub(start)
+	if elapsed > 100 * time.Millisecond {
+		t.Errorf("That should have taken no time at all to finish, took %v",
+			elapsed)
 	}
 	if val != 20 || err != nil || timeout {
-		t.Errorf("Expected 20, false, and nil, got %v, %v and %v", val, timeout, err)
+		t.Errorf("Expected 20, false, and nil, got %v, %v and %v",
+			val, timeout, err)
 	}
-	fmt.Println(val, err)
 }

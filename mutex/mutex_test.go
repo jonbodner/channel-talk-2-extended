@@ -1,7 +1,6 @@
 package mutex_test
 
 import (
-	"fmt"
 	"runtime"
 	"sync"
 	"testing"
@@ -15,13 +14,31 @@ func (v Val) read() int {
 	return int(v)
 }
 
-func (v *Val) inc() {
+func (v *Val) increment() {
 	*v = *v + 1
 }
 
+type fakeMutex struct{}
+
+func (fm *fakeMutex) Lock() {
+
+}
+
+func (fm *fakeMutex) Unlock() {
+
+}
+
+func TestChannelMutexFail(t *testing.T) {
+	testIt(&fakeMutex{}, t)
+}
+
 func TestChannelMutex(t *testing.T) {
-	var v Val
 	cm := mutex.New()
+	testIt(cm, t)
+}
+
+func testIt(cm mutex.Mutex, t *testing.T) {
+	var v Val
 	var wg sync.WaitGroup
 	for i := 0; i < 10; i++ {
 		wg.Add(1)
@@ -30,7 +47,7 @@ func TestChannelMutex(t *testing.T) {
 				cm.Lock()
 				vi := v.read()
 				runtime.Gosched()
-				v.inc()
+				v.increment()
 				runtime.Gosched()
 				vp := v.read()
 				runtime.Gosched()

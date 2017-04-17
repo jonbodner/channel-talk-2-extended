@@ -1,6 +1,6 @@
 package main
 
-func MakeInfinite() (chan<- interface{}, <-chan interface{}) {
+func MakeInfiniteQueue() Queue {
 	in := make(chan interface{})
 	out := make(chan interface{})
 	go func() {
@@ -31,5 +31,5 @@ func MakeInfinite() (chan<- interface{}, <-chan interface{}) {
 		}
 		close(out)
 	}()
-	return in, out
+	return &queueInner{in: in, out: out}
 }

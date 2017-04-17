@@ -1,16 +1,15 @@
 package main
 
 import (
-	"github.com/jonbodner/channel-talk-2/mutex"
 	"time"
 )
 
-type Interface interface {
+type Future interface {
 	Get() (interface{}, error)
 
 	GetUntil(d time.Duration) (interface{}, bool, error)
 
-	Then(Step) Interface
+	Then(Step) Future
 
 	Cancel()
 
@@ -24,7 +23,7 @@ type Step func(interface{}) (interface{}, error)
 type futureImpl struct {
 	done   chan struct{}
 	cancel chan struct{}
-	cancelM mutex.ChannelMutex
+	guard  chan struct{}
 	val    interface{}
 	err    error
 }
@@ -52,8 +51,8 @@ func (f *futureImpl) GetUntil(d time.Duration) (interface{}, bool, error) {
 	return nil, false, nil
 }
 
-func (f *futureImpl) Then(next Step) Interface {
-	nextFuture := newInner(f.cancel, f.cancelM, func() (interface{}, error) {
+func (f *futureImpl) Then(next Step) Future {
+	nextFuture := newInner(f.cancel, f.guard, func() (interface{}, error) {
 		result, err := f.Get()
 		if f.IsCancelled() || err != nil {
 			return result, err
@@ -64,15 +63,19 @@ func (f *futureImpl) Then(next Step) Interface {
 }
 
 func (f *futureImpl) Cancel() {
-	f.cancelM.Lock()
-	defer f.cancelM.Unlock()
 	select {
 	case <-f.done:
 	//already finished
 	case <-f.cancel:
 	//already cancelled
 	default:
-		close(f.cancel) //should only be called once, since the closed cancel channel will always return
+	//making request to cancel
+	// this will serialize requests from multiple goroutines
+			select {
+			case <-f.done:
+			case <-f.cancel:
+			case f.guard <- struct{}{}:
+			}
 	}
 }
 
@@ -85,15 +88,21 @@ func (f *futureImpl) IsCancelled() bool {
 	}
 }
 
-func New(inFunc Process) Interface {
-	return newInner(make(chan struct{}), mutex.New(), inFunc)
+func New(inFunc Process) Future {
+	cancel := make(chan struct{})
+	guard := make(chan struct{})
+	go func() {
+		<-guard
+		close(cancel)
+	}()
+	return newInner(cancel, guard, inFunc)
 }
 
-func newInner(cancelChan chan struct{}, cancelM mutex.ChannelMutex, inFunc Process) Interface {
+func newInner(cancel chan struct{}, guard chan struct{}, inFunc Process) Future {
 	f := futureImpl{
 		done:   make(chan struct{}),
-		cancel: cancelChan,
-		cancelM: cancelM,
+		cancel: cancel,
+		guard: guard,
 	}
 	go func() {
 		f.val, f.err = inFunc()

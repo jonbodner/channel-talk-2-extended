@@ -1,18 +1,23 @@
 package mutex
 
-type ChannelMutex chan bool
+type Mutex interface {
+	Lock()
+	Unlock()
+}
 
-func New() ChannelMutex {
-	cm := make(ChannelMutex, 1)
+type channelMutex chan bool
+
+func New() Mutex {
+	cm := make(channelMutex, 1)
 	cm <- true
 	return cm
 }
 
-func (cm ChannelMutex) Lock() {
+func (cm channelMutex) Lock() {
 	<-cm
 }
 
-func (cm ChannelMutex) Unlock() {
+func (cm channelMutex) Unlock() {
 	cm <- true
 }
 

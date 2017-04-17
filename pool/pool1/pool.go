@@ -8,14 +8,14 @@ import (
 
 type Factory func() interface{}
 
-type poolInner struct {
-	items chan interface{}
-}
-
 type Pool interface {
 	Borrow() interface{}
 	Return(interface{})
 	BorrowWithTimeout(time.Duration) (interface{}, error)
+}
+
+type poolInner struct {
+	items chan interface{}
 }
 
 func NewPool(f Factory, count int) Pool {

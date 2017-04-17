@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"testing"
 	"time"
 )
@@ -22,24 +21,24 @@ func TestGet(t *testing.T) {
 	// this will take about 2 seconds to complete
 	start := time.Now()
 	val, err := f.Get()
-	end := time.Now()
-	if end.Sub(start) < time.Second {
-		t.Errorf("That should have taken 2 seconds to finish, took %v", end.Sub(start))
+	elapsed := time.Now().Sub(start)
+	if elapsed < time.Second {
+		t.Errorf("That should have taken 2 seconds to finish, took %v",
+			elapsed)
 	}
 	if val != 20 || err != nil {
 		t.Errorf("Expected 20 and nil, got %v and %v", val, err)
 	}
-	fmt.Println(val, err)
 
 	// this will complete immediately
 	start = time.Now()
 	val, err = f.Get()
-	end = time.Now()
-	if end.Sub(start) > time.Second {
-		t.Errorf("That should have taken no time to finish, took %v", end.Sub(start))
+	elapsed = time.Now().Sub(start)
+	if elapsed > time.Second {
+		t.Errorf("That should have taken no time to finish, took %v",
+			elapsed)
 	}
 	if val != 20 || err != nil {
 		t.Errorf("Expected 20 and nil, got %v and %v", val, err)
 	}
-	fmt.Println(val, err)
 }

@@ -9,13 +9,13 @@ type Factory func() interface{}
 
 type Processor func(interface{})
 
-type poolInner struct {
-	items chan interface{}
-}
-
 type Pool interface {
 	Run(Processor)
 	RunWithTimeout(Processor, time.Duration) error
+}
+
+type poolInner struct {
+	items chan interface{}
 }
 
 func NewPool(f Factory, count int) Pool {

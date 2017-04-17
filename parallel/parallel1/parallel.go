@@ -3,7 +3,13 @@ package main
 type Evaluator func(interface{}) (interface{}, error)
 
 func FanOut(data interface{}, evaluators []Evaluator) ([]interface{}, []error) {
-	gather := make(chan interface{}, len(evaluators))
+	results, errors := launch(data, evaluators)
+	out, errs := gather(results, errors, len(evaluators))
+	return out, errs
+}
+
+func launch(data interface{}, evaluators []Evaluator) (chan interface{}, chan error) {
+	results := make(chan interface{}, len(evaluators))
 	errors := make(chan error, len(evaluators))
 	for _, v := range evaluators {
 		go func(e Evaluator) {
@@ -11,15 +17,19 @@ func FanOut(data interface{}, evaluators []Evaluator) ([]interface{}, []error) {
 			if err != nil {
 				errors <- err
 			} else {
-				gather <- result
+				results <- result
 			}
 		}(v)
 	}
-	out := make([]interface{}, 0, len(evaluators))
-	errs := make([]error, 0, len(evaluators))
-	for range evaluators {
+	return results, errors
+}
+
+func gather(results chan interface{}, errors chan error, count int) ([]interface{}, []error) {
+	out := make([]interface{}, 0, count)
+	errs := make([]error, 0, count)
+	for i := 0; i < count; i++ {
 		select {
-		case r := <-gather:
+		case r := <-results:
 			out = append(out, r)
 		case e := <-errors:
 			errs = append(errs, e)

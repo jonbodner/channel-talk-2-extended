@@ -1,10 +1,15 @@
 package main
 
-type Interface interface {
-	Get() (interface{}, error)
+type Process func() (interface{}, error)
+
+func New(inFunc Process) Future {
+	//do magic stuff
+	return &futureImpl{}
 }
 
-type Process func() (interface{}, error)
+type Future interface {
+	Get() (interface{}, error)
+}
 
 type futureImpl struct {
 	//this will have stuff eventually
@@ -13,10 +18,5 @@ type futureImpl struct {
 func (f *futureImpl) Get() (interface{}, error) {
 	//this will have stuff eventually
 	return nil, nil
-}
-
-func New(inFunc Process) Interface {
-	//do magic stuff
-	return &futureImpl{}
 }
 

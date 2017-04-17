@@ -13,10 +13,11 @@ func doSomethingThatTakesAWhile(i int) (int, error) {
 	return i * 2, nil
 }
 
-func doAnotherThing(i int) (int, error) {
+func doAnotherThing(i interface{}) (interface{}, error) {
+	ii := i.(int)
 	// we can wait a bit here, too
 	time.Sleep(50 * time.Millisecond)
-	return i + 1, nil
+	return ii + 1, nil
 }
 
 func doAnError(i int) (int, error) {
@@ -28,9 +29,7 @@ func TestThen(t *testing.T) {
 	a := 10
 	f := New(func() (interface{}, error) {
 		return doSomethingThatTakesAWhile(a)
-	}).Then(func(v interface{}) (interface{}, error) {
-		return doAnotherThing(v.(int))
-	})
+	}).Then(doAnotherThing)
 
 	// this will wait for a second to complete
 	// and will return nil for both val and err

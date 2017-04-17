@@ -15,20 +15,19 @@ func doSomethingThatTakesAWhile(i int) (int, error) {
 	return i * 2, nil
 }
 
-func doAnotherThing(i int) (int, error) {
+func doAnotherThing(i interface{}) (interface{}, error) {
+	ii := i.(int)
 	// we can wait a bit here, too
 	time.Sleep(50 * time.Millisecond)
 	fmt.Println("finished doAnotherThing")
-	return i + 1, nil
+	return ii + 1, nil
 }
 
 func TestCancel1(t *testing.T) {
 	a := 10
 	f := New(func() (interface{}, error) {
 		return doSomethingThatTakesAWhile(a)
-	}).Then(func(v interface{}) (interface{}, error) {
-		return doAnotherThing(v.(int))
-	})
+	}).Then(doAnotherThing)
 
 	go func() {
 		time.Sleep(1 * time.Second)
@@ -45,9 +44,7 @@ func TestCancel2(t *testing.T) {
 	a := 10
 	g := New(func() (interface{}, error) {
 		return doSomethingThatTakesAWhile(a)
-	}).Then(func(v interface{}) (interface{}, error) {
-		return doAnotherThing(v.(int))
-	})
+	}).Then(doAnotherThing)
 
 	go func() {
 		time.Sleep(3 * time.Second)

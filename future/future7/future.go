@@ -7,14 +7,23 @@ import (
 type Process func() (interface{}, error)
 
 func New(inFunc Process) Future {
-	return newInner(make(chan struct{}), inFunc)
+	return newInner(make(chan struct{}), make(chan struct{}), inFunc)
 }
 
-func newInner(cancel chan struct{}, inFunc Process) Future {
+func newInner(cancel chan struct{}, guard chan struct{}, inFunc Process) Future {
 	f := futureImpl{
 		done:   make(chan struct{}),
 		cancel: cancel,
+		guard: guard,
 	}
+	go func() {
+		select {
+		case <-f.done:
+		//work was done, just exit
+		case <-f.guard:
+			close(f.cancel)
+		}
+	}()
 	go func() {
 		f.val, f.err = inFunc()
 		close(f.done)
@@ -39,6 +48,7 @@ type Future interface {
 type futureImpl struct {
 	done   chan struct{}
 	cancel chan struct{}
+	guard  chan struct{}
 	val    interface{}
 	err    error
 }
@@ -67,7 +77,7 @@ func (f *futureImpl) GetUntil(d time.Duration) (interface{}, bool, error) {
 }
 
 func (f *futureImpl) Then(next Step) Future {
-	nextFuture := newInner(f.cancel, func() (interface{}, error) {
+	nextFuture := newInner(f.cancel, f.guard, func() (interface{}, error) {
 		result, err := f.Get()
 		if f.IsCancelled() || err != nil {
 			return result, err
@@ -84,7 +94,13 @@ func (f *futureImpl) Cancel() {
 	case <-f.cancel:
 	//already cancelled
 	default:
-		close(f.cancel) //should only be called once, since the closed cancel channel will always return
+	//making request to cancel
+	// this will serialize requests from multiple goroutines
+			select {
+			case <-f.done:
+			case <-f.cancel:
+			case f.guard <- struct{}{}:
+			}
 	}
 }
 
