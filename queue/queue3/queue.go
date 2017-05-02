@@ -5,12 +5,11 @@ func MakeInfiniteQueue() Queue {
 	out := make(chan interface{})
 	go func() {
 		var inQueue []interface{}
-	loop:
-		for {
+		for in != nil {
 			select {
 			case v, ok := <-in:
 				if !ok {
-					break loop
+					in = nil
 				} else {
 					inQueue = append(inQueue, v)
 				}

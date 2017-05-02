@@ -12,30 +12,35 @@ func doSomethingThatTakesAWhile(i int) (int, error) {
 	return i * 2, nil
 }
 
+func timeFutureGet(f Future) (time.Duration, interface{}, error) {
+	start := time.Now()
+	val, err := f.Get()
+	elapsed := time.Now().Sub(start)
+	return elapsed, val, err
+}
+
+func timeFutureGetUntil(f Future, d time.Duration) (time.Duration, interface{}, error) {
+	start := time.Now()
+	val, err := f.GetUntil(d)
+	elapsed := time.Now().Sub(start)
+	return elapsed, val, err
+}
+
 func TestGetUntil(t *testing.T) {
 	a := 10
 	f := New(func() (interface{}, error) {
 		return doSomethingThatTakesAWhile(a)
 	})
 
-	// this will wait about a second to complete
-	// and will return nil for both val and err
-	// and timeout will be true
-	start := time.Now()
-	val, timeout, err := f.GetUntil(time.Second)
-	elapsed := time.Now().Sub(start)
+	elapsed, val, err := timeFutureGetUntil(f, time.Second)
 	if elapsed < time.Second {
 		t.Errorf("That should have waited a second to finish, took %v", elapsed)
 	}
-	if val != nil || err != nil || timeout != true {
-		t.Errorf("Expected nil, true, and nil, got %v, %v, and %v",
-			val, timeout, err)
+	if val != nil || err != FUTURE_TIMEOUT {
+		t.Errorf("Expected nil, and FUTURE_TIMEOUT, got %v and %v", val, err)
 	}
 
-	// this will wait for val and err to have values
-	start = time.Now()
-	val, err = f.Get()
-	elapsed = time.Now().Sub(start)
+	elapsed, val, err = timeFutureGet(f)
 	if elapsed > 1100 * time.Millisecond {
 		t.Errorf("That should have taken about a second to finish, took %v",
 			elapsed)
@@ -44,16 +49,12 @@ func TestGetUntil(t *testing.T) {
 		t.Errorf("Expected 20 and nil, got %v and %v", val, err)
 	}
 
-	//this GetUntil will return immediately
-	start = time.Now()
-	val, timeout, err = f.GetUntil(time.Second)
-	elapsed = time.Now().Sub(start)
+	elapsed, val, err = timeFutureGetUntil(f, time.Second)
 	if elapsed > 100 * time.Millisecond {
 		t.Errorf("That should have taken no time at all to finish, took %v",
 			elapsed)
 	}
-	if val != 20 || err != nil || timeout {
-		t.Errorf("Expected 20, false, and nil, got %v, %v and %v",
-			val, timeout, err)
+	if val != 20 || err != nil {
+		t.Errorf("Expected 20 and nil, got %v and %v", val, err)
 	}
 }

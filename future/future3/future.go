@@ -1,6 +1,9 @@
 package main
 
-import "time"
+import (
+	"time"
+	"errors"
+)
 
 type Process func() (interface{}, error)
 
@@ -18,7 +21,7 @@ func New(inFunc Process) Future {
 type Future interface {
 	Get() (interface{}, error)
 
-	GetUntil(d time.Duration) (interface{}, bool, error)
+	GetUntil(d time.Duration) (interface{}, error)
 }
 
 type futureImpl struct {
@@ -32,15 +35,17 @@ func (f *futureImpl) Get() (interface{}, error) {
 	return f.val, f.err
 }
 
-func (f *futureImpl) GetUntil(d time.Duration) (interface{}, bool, error) {
+var FUTURE_TIMEOUT = errors.New("Your request has timed out")
+
+func (f *futureImpl) GetUntil(d time.Duration) (interface{}, error) {
 	select {
 	case <-f.done:
 		val, err := f.Get()
-		return val, false, err
+		return val, err
 	case <-time.After(d):
-		return nil, true, nil
+		return nil, FUTURE_TIMEOUT
 	}
 	// This should never be executed
-	return nil, false, nil
+	return nil, nil
 }
 

@@ -11,12 +11,11 @@ func MakeInfiniteQueue() Queue {
 			}
 			return inQueue[0]
 		}
-		loop:
-		for {
+		for in != nil {
 			select {
 			case v, ok := <-in:
 				if !ok {
-					break loop
+					in = nil
 				} else {
 					inQueue = append(inQueue, v)
 				}

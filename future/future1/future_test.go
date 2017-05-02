@@ -12,6 +12,13 @@ func doSomethingThatTakesAWhile(i int) (int, error) {
 	return i * 2, nil
 }
 
+func timeFutureGet(f Future) (time.Duration, interface{}, error) {
+	start := time.Now()
+	val, err := f.Get()
+	elapsed := time.Now().Sub(start)
+	return elapsed, val, err
+}
+
 func TestGet(t *testing.T) {
 	a := 10
 	f := New(func() (interface{}, error) {
@@ -19,9 +26,7 @@ func TestGet(t *testing.T) {
 	})
 
 	// this will take about 2 seconds to complete
-	start := time.Now()
-	val, err := f.Get()
-	elapsed := time.Now().Sub(start)
+	elapsed, val, err := timeFutureGet(f)
 	if elapsed < time.Second {
 		t.Errorf("That should have taken 2 seconds to finish, took %v",
 			elapsed)
@@ -31,9 +36,7 @@ func TestGet(t *testing.T) {
 	}
 
 	// this will complete immediately
-	start = time.Now()
-	val, err = f.Get()
-	elapsed = time.Now().Sub(start)
+	elapsed, val, err = timeFutureGet(f)
 	if elapsed > time.Second {
 		t.Errorf("That should have taken no time to finish, took %v",
 			elapsed)

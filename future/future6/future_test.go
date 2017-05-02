@@ -86,7 +86,8 @@ func TestCancelConcurrent(t *testing.T) {
 		}
 		close(start)
 		done.Wait()
-		fmt.Println("loop done", count, runtime.NumGoroutine())
+		time.Sleep(500 * time.Millisecond)
+		//fmt.Println("loop done", count)
 	}
 	for {
 		loop()
@@ -94,7 +95,7 @@ func TestCancelConcurrent(t *testing.T) {
 }
 
 func TestGoRoutinesQuitCancel(t *testing.T) {
-	fmt.Println(runtime.NumGoroutine())
+	numGR := runtime.NumGoroutine()
 	f := New(func() (interface{}, error) {
 		time.Sleep(1 * time.Second)
 		return 1, nil
@@ -103,11 +104,15 @@ func TestGoRoutinesQuitCancel(t *testing.T) {
 	})
 	f.Cancel()
 	time.Sleep(2* time.Second)
-	fmt.Println(runtime.NumGoroutine())
+	endNumGR := runtime.NumGoroutine()
+	if numGR != endNumGR {
+		t.Errorf("Expected the same number of goroutines at start and end, " +
+			"but have %d at start and %d at end", numGR, endNumGR)
+	}
 }
 
 func TestGoRoutinesQuitDone(t *testing.T) {
-	fmt.Println(runtime.NumGoroutine())
+	numGR := runtime.NumGoroutine()
 	f := New(func() (interface{}, error) {
 		return 1, nil
 	}).Then(func(i interface{}) (interface{}, error) {
@@ -115,5 +120,9 @@ func TestGoRoutinesQuitDone(t *testing.T) {
 	})
 	f.Get()
 	time.Sleep(100* time.Millisecond)
-	fmt.Println(runtime.NumGoroutine())
+	endNumGR := runtime.NumGoroutine()
+	if numGR != endNumGR {
+		t.Errorf("Expected the same number of goroutines at start and end, " +
+			"but have %d at start and %d at end", numGR, endNumGR)
+	}
 }

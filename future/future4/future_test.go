@@ -20,41 +20,33 @@ func doAnotherThing(i interface{}) (interface{}, error) {
 	return ii + 1, nil
 }
 
-func doAnError(i int) (int, error) {
-	//this errors out
-	return 0, errors.New("Nope, no good")
-}
-
 func TestThen(t *testing.T) {
 	a := 10
 	f := New(func() (interface{}, error) {
 		return doSomethingThatTakesAWhile(a)
 	}).Then(doAnotherThing)
 
-	// this will wait for a second to complete
-	// and will return nil for both val and err
-	// and timeout will be true
-	val, timeout, err := f.GetUntil(1 * time.Second)
-	if val != nil || timeout != true || err != nil {
-		t.Errorf("Expected nil, true, nil, got %v, %v, %v", val, timeout, err)
-	}
-
-	// this will wait for val and err to have values
-	val, err = f.Get()
+	val, err := f.Get()
 	if val != 21 || err != nil {
 		t.Errorf("Expected 21, nil, got %v, %v", val, err)
 	}
+}
 
-	// this will error out on the first step, so we
-	// don't do the long-running thing next
-	g := New(func() (interface{}, error) {
+func doAnError(i int) (int, error) {
+	//this errors out
+	return 0, errors.New("Nope, no good")
+}
+
+func TestThenError(t *testing.T) {
+	a := 10
+	f := New(func() (interface{}, error) {
 		return doAnError(a)
 	}).Then(func(v interface{}) (interface{}, error) {
 		return doSomethingThatTakesAWhile(v.(int))
 	})
 
-	val2, timeout2, err2 := g.GetUntil(1 * time.Second)
-	if val2 != 0 || timeout2 != false || err2 == nil || err2.Error() != "Nope, no good" {
-		t.Errorf("Expected 0, false, Nope, no good, got %v, %v, %v", val2, timeout2, err2)
+	val, err := f.Get()
+	if val != 0 ||  err == nil || err.Error() != "Nope, no good" {
+		t.Errorf("Expected 0, false, Nope, no good, got %v, %v", val, err)
 	}
 }

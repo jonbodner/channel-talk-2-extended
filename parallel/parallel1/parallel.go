@@ -2,13 +2,13 @@ package main
 
 type Evaluator func(interface{}) (interface{}, error)
 
-func FanOut(data interface{}, evaluators []Evaluator) ([]interface{}, []error) {
-	results, errors := launch(data, evaluators)
+func FanOut(evaluators []Evaluator, data interface{}) ([]interface{}, []error) {
+	results, errors := launch(evaluators, data)
 	out, errs := gather(results, errors, len(evaluators))
 	return out, errs
 }
 
-func launch(data interface{}, evaluators []Evaluator) (chan interface{}, chan error) {
+func launch(evaluators []Evaluator, data interface{}) (chan interface{}, chan error) {
 	results := make(chan interface{}, len(evaluators))
 	errors := make(chan error, len(evaluators))
 	for _, v := range evaluators {

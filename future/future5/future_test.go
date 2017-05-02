@@ -42,26 +42,18 @@ func TestCancel1(t *testing.T) {
 
 func TestCancel2(t *testing.T) {
 	a := 10
-	g := New(func() (interface{}, error) {
+	f := New(func() (interface{}, error) {
 		return doSomethingThatTakesAWhile(a)
 	}).Then(doAnotherThing)
 
 	go func() {
 		time.Sleep(3 * time.Second)
 		fmt.Println("Cancelling g (too late)!")
-		g.Cancel()
+		f.Cancel()
 	}()
-	val2, err2 := g.Get()
-	if val2 != 21 || err2 != nil || g.IsCancelled() {
-		t.Errorf("Expected 21, nil, false, got %v, %v, %v", val2, err2, g.IsCancelled())
-	}
-
-	// once done happens, IsCancelled will never return true
-	// and Get still has the calculated values
-	time.Sleep(2 * time.Second)
-	val2, err2 = g.Get()
-	if val2 != 21 || err2 != nil || g.IsCancelled() {
-		t.Errorf("Expected 21, nil, false, got %v, %v, %v", val2, err2, g.IsCancelled())
+	val, err := f.Get()
+	if val != 21 || err != nil || f.IsCancelled() {
+		t.Errorf("Expected 21, nil, false, got %v, %v, %v", val, err, f.IsCancelled())
 	}
 }
 

@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"testing"
 	"time"
 	"sync"
@@ -44,13 +43,13 @@ func readVals(queue Queue, readDelay time.Duration, t *testing.T) {
 	for v, ok := queue.Get(); ok; v, ok = queue.Get() {
 		time.Sleep(readDelay)
 		vi := v.(int)
-		fmt.Println(vi)
+		//fmt.Println(vi)
 		if lastVal + 1 != vi {
 			t.Errorf("Unexpected value; expected %d, got %d", lastVal + 1, vi)
 		}
 		lastVal = vi
 	}
-	fmt.Println("finished reading")
+	//fmt.Println("finished reading")
 
 	if lastVal != 99 {
 		t.Errorf("Didn't get all values, last one received was %d", lastVal)
@@ -59,10 +58,10 @@ func readVals(queue Queue, readDelay time.Duration, t *testing.T) {
 
 func writeVals(queue Queue, writeDelay time.Duration) {
 	for i := 0; i < 100; i++ {
-		fmt.Println("writing", i)
+		//fmt.Println("writing", i)
 		queue.Put(i)
 		time.Sleep(writeDelay)
 	}
 	queue.Close()
-	fmt.Println("finished writing")
+	//fmt.Println("finished writing")
 }

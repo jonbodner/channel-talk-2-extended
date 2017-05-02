@@ -2,11 +2,18 @@ package main
 
 import (
 	"sync"
-	"testing"
 	"fmt"
+	"time"
 )
 
-func TestPool(t *testing.T) {
+func adderFactory() interface{} {
+	return func(a, b int) int {
+		time.Sleep(1 * time.Second)
+		return a + b
+	}
+}
+
+func main() {
 	adderPool := NewPool(adderFactory, 3)
 	var wg sync.WaitGroup
 	for i := 0; i < 5; i++ {
